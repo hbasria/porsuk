@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+{% load staticfiles %}{% load i18n %}
+{% load humanize %}
+
+{% block body %}
+<nav>
+    <div class="container">
+      <a href="/">PiSi Paket Yöneticisi</a>
+    </div>
+</nav>
+
+<header>
+    <div class="container">
+        <a href="/" id="npm-logo"><img src="{% static "img/pisi-logo.png" %}" alt="pisi logo" /></a>
+
+        <div id="user-info" class="anonymous"></div>
+
+        <form id="npm-search" action="/pisi" method="get">
+        <input name="q" value="" type="search" id="site-search" placeholder="find packages" tabindex="1" autocorrect="off" autocapitalize="off" />
+        <input type="submit" id="site-search-submit" />
+        </form>
+    </div>
+</header>
+
+<div class="container">
+    <div class="centered">
+        <h1>pisi is the package manager for <span id="what-npm-is-for" class="disabled">pisi Linux</span></h1>
+    </div>
+
+    <div id="home-stats">
+      <div class="stat icon-package-hex">
+        <strong class="pretty-number">{{ package_count }}</strong> total packages
+      </div>
+
+      <div class="stat icon-cal-24hours">
+        <strong class="pretty-number">..</strong>
+        downloads in the last day
+      </div>
+
+      <div class="stat icon-cal-7days">
+        <strong class="pretty-number">..</strong>
+        downloads in the last week
+      </div>
+
+      <div class="stat icon-cal-30days">
+        <strong class="pretty-number">..</strong>
+        downloads in the last month
+      </div>
+    </div>
+
+
+
+
+    {% if package %}
+
+    {% else %}
+        {% if component %}
+            <h2 class="centered ruled">Software Packages in "{{ repo }}", Subsection {{ component.component }}</h2>
+        {% else %}
+            <h2 class="centered ruled">List of Components in "{{ repo }}"</h2>
+        {% endif %}
+
+        <ul class="columnar">
+            {% for component in components %}
+            <li>
+                <div class="package-widget ">
+                    <div class="package-details">
+                        <h3><a class="name" href="{{ component.url }}">{{ component.component }}</a></h3>
+                        <p class="description">{{ component.summary }}</p>
+                        <p class="author quiet">
+
+                        </p>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+
+    {% endif %}
+
+
+
+    {% if source %}
+        <div class="container">
+            <div class="content">
+                <div id="readme">
+                    <hgroup>
+                        <h1>{{ source.name }}</h1>
+                        <h2>{{ source.summary }}</h2>
+                    </hgroup>
+                    <p>{{ source.description }}</p>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <h3>Source Info</h3>
+                <ul class="box">
+                    <li>
+                      <strong>{{ source.version }}</strong>
+                        published {{ source.updated_at }}
+                        by <a href="#">{{ source.packager.name }}</a>
+                    </li>
+                    <li><a href="{{ source.homepage }}">{{ source.homepage }}</a></li>
+                </ul>
+
+                <h3>Stats</h3>
+                <ul class="box">
+                    <li>Build Script Size <strong class="pretty-number">{{ source.build_script_size }}</strong></li>
+                    <li>Spec Script Size <strong class="pretty-number">{{ source.spec_script_size }}</strong></li>
+                    <li>Update Count <strong class="pretty-number">{{ source.update_count }}</strong></li>
+                    <li>Patch Count <strong class="pretty-number">{{ source.patch_count }}</strong></li>
+                </ul>
+
+                <h3>Keywords</h3>
+                <p class="list-of-links"></p>
+
+                <h3>Packages</h3>
+                <p class="list-of-links">
+                    {% for source_package in source.packages.all %}
+                        <a href="../../{{ source_package.name }}">
+                            {{ source_package.name }}
+                        </a>,
+                    {% endfor %}
+                </p>
+
+                <h3>Build Dependencies</h3>
+                <p class="list-of-links">
+                    {% for dep in source.build_dep.all %}
+                        <a href="../{{ dep.name }}">
+                            {{ dep.name }}
+
+                            {% if dep.versionFrom %}from: {{ dep.versionFrom }}{% endif %}
+                            {% if dep.versionTo %}from: {{ dep.versionTo }}{% endif %}
+                            {% if dep.version %}from: {{ dep.version }}{% endif %}
+                            {% if dep.releaseFrom %}from: {{ dep.releaseFrom }}{% endif %}
+                            {% if dep.releaseTo %}from: {{ dep.releaseTo }}{% endif %}
+                            {% if dep.release %}from: {{ dep.release }}{% endif %}
+
+                        </a>,
+                    {% endfor %}
+                </p>
+
+
+                <div class="hiring-container" data-template="sidebar">
+                    <div class="ad">
+                        <p>
+                            <a href="http://help.com/#were-hiring">Help.com</a> is hiring.
+                            <a class="quiet" href="/whoshiring">View more…</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        {% if package %}
+            <div class="container">
+                <div class="content">
+                    <div id="readme">
+                        <hgroup>
+                            <h1>{{ package.name }}</h1>
+                            <h2>{{ package.source.summary }}</h2>
+                        </hgroup>
+                        <p>{{ package.source.description }}</p>
+                    </div>
+                </div>
+
+                <div class="sidebar">
+                    <div class="autoselect-wrapper npm-install icon-download">
+                        <input type="text" value="pisi it {{ package.name }}" readonly=""/>
+                    </div>
+
+	                <h3>Package Info</h3>
+	                <ul class="box">
+                        <li>Component: <a href="../{{ package.source.component }}">{{ package.source.component }}</a></li>
+                        <li>Source: <a href="../source/{{ package.source.name }}">{{ package.source.name }}</a></li>
+                        <li>
+                          <strong>{{ package.source.version }}</strong>
+                            published {{ package.source.updated_at|naturaltime }}
+                            by <a href="#">{{ package.source.packager.name }}</a>
+                        </li>
+                        <li><a href="{{ package.source.homepage }}">{{ package.source.homepage }}</a></li>
+                    </ul>
+
+                    <h3>Stats</h3>
+                    <ul class="box">
+                        <li>Build Script Size <strong class="pretty-number">{{ package.source.build_script_size }}</strong></li>
+                        <li>Spec Script Size <strong class="pretty-number">{{ package.source.spec_script_size }}</strong></li>
+                        <li>Update Count <strong class="pretty-number">{{ package.source.update_count }}</strong></li>
+                        <li>Patch Count <strong class="pretty-number">{{ package.source.patch_count }}</strong></li>
+                    </ul>
+
+                    <h3>Keywords</h3>
+                    <p class="list-of-links"></p>
+
+                    <h3>Dependencies</h3>
+                    <p class="list-of-links">
+                        {% for dep in runtime_deps %}
+                            <a href="../{{ dep.name }}">
+                                {{ dep.name }}
+
+                                {% if dep.versionFrom %}from: {{ dep.versionFrom }}{% endif %}
+                                {% if dep.versionTo %}from: {{ dep.versionTo }}{% endif %}
+                                {% if dep.version %}from: {{ dep.version }}{% endif %}
+                                {% if dep.releaseFrom %}from: {{ dep.releaseFrom }}{% endif %}
+                                {% if dep.releaseTo %}from: {{ dep.releaseTo }}{% endif %}
+                                {% if dep.release %}from: {{ dep.release }}{% endif %}
+
+                            </a>,
+                        {% endfor %}
+                    </p>
+
+                    <h3>Files</h3>
+                    <p class="list-of-links">
+                        {% for file in package.files.all %}
+                            {{ file.path }}<br/>
+                        {% endfor %}
+                    </p>
+
+                    <h3>Additional Files</h3>
+                    <p class="list-of-links">
+                        {% for file in package.a_files.all %}
+                            {{ file.filename }}<br/>
+                        {% endfor %}
+                    </p>
+
+                    <h3>Pachess</h3>
+                    <p class="list-of-links">
+                        {% for patch in package.source.patches.all %}
+                            {{ patch.name }}<br/>
+                        {% endfor %}
+                    </p>
+
+
+                    <div class="hiring-container" data-template="sidebar">
+                        <div class="ad">
+                            <p>
+                                <a href="http://help.com/#were-hiring">Help.com</a> is hiring.
+                                <a class="quiet" href="/whoshiring">View more…</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        {% else %}
+            {% if packages %}
+                <h2 class="centered ruled">Software Packages in "{{ repo }}", Subsection {{ component.component }}</h2>
+
+                <ul class="columnar">
+                    {% for package in packages %}
+                    <li>
+                        <div class="package-widget ">
+                            <div class="package-details">
+                                <h3><a class="name" href="/{{ repo }}/packages/{{ package.name }}">{{ package.name }}</a></h3>
+                                <p class="description">{{ package.source.summary }}</p>
+                                <p class="author quiet">
+                                    <a class="version" href="/{{ repo }}/packages/{{ package.name }}">{{ package.source.version }}</a>
+                                    published {{ package.source.updated_at|naturaltime }} by <a href="#">{{ package.source.packager.name }}</a>
+                                </p>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+               </ul>
+
+                {% if is_paginated %}
+
+                    <div class="pagination">
+                        {% if page_obj.has_previous %}
+                            <a class="previous" href="?page={{ page_obj.previous_page_number }}">Prev</a>
+                        {% endif %}
+
+                        {% for page_number in paginator.page_range %}
+                            {% if page_number = page_obj.number %}
+                                <a class="active" href="">{{ page_number }}</a>
+                            {% else %}
+                                <a href="?page={{ page_number }}">{{ page_number }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a class="next" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        {% endif %}
+                    </div>
+
+                {% endif %}
+
+
+            {% endif %}
+        {% endif %}
+    {% endif %}
+</div>
+
+
+{% endblock body %}

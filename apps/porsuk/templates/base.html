@@ -1,0 +1,21 @@
+{% load staticfiles %}{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+
+    {% block extrameta %}{% endblock %}
+    <title>{% block title %}{% endblock %}</title>
+
+    <link href="{% static "css/layout.css" %}" rel="stylesheet" type="text/css" media="all">
+    <link href='//fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700' rel='stylesheet' type='text/css'>
+
+    {% block extrastyle %}{% endblock %}
+    {% block extrahead %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+  {% block body %}{% endblock body %}
+  {% block extrabody %}{% endblock %}
+</body>
+</html>
