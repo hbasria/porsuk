@@ -13,9 +13,12 @@ from pisi.component import Component as PisiComponent
 
 __author__ = 'hba'
 
-def validate_date(date_text):
+def validate_date(date_text, repo_os):
     try:
-        return datetime.datetime.strptime(date_text, '%Y-%m-%d')
+        if repo_os == 'pisilinux':
+            return datetime.datetime.strptime(date_text, '%Y-%m-%d')
+        else:
+            return datetime.datetime.strptime(date_text, '%d-%m-%Y')
     except ValueError:
         return None
 
@@ -23,7 +26,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         repositories = (
-            ('1.0', 'http://packages.pisilinux.org/repositories/1.0/stable/x86_64/pisi-index.xml.xz'),
+            ('pisilinux', '1.0', 'http://packages.pisilinux.org/repositories/1.0/stable/x86_64/pisi-index.xml.xz'),
+            ('evolveos', '1.0', 'https://github.com/evolve-os/repository/raw/master/eopkg-index.xml.xz'),
         )
 
         home = os.environ.get('HOME')
@@ -33,10 +37,11 @@ class Command(BaseCommand):
         startTime=time()
         package_counter = 1
 
-        for repo_name, repo_url in repositories:
-            repo, created = Repo.objects.get_or_create(name=repo_name, url=repo_url)
+        for repo_os, repo_name, repo_url in repositories:
+            repo_path = os.path.join(home, gitdir, repo_os, repo_name)
+            repo, created = Repo.objects.get_or_create(name='-'.join([repo_os, repo_name]), url=repo_url)
 
-            for root, dirs, files in os.walk(os.path.join(home, gitdir, repo_name)):
+            for root, dirs, files in os.walk(repo_path):
                 for file in files:
                     if file == 'pspec.xml':
                         print "spec file: %s" % os.path.join(root, file)
@@ -47,7 +52,7 @@ class Command(BaseCommand):
                            package_counter += 1
                            continue
 
-                        print "\033[01;33m%s\033[0m - %s - (Paket \033[01;33m%d\033[0m)" % (spec.source.name, repo_name, package_counter)
+
 
                         packStartTime = time()
 
@@ -57,17 +62,20 @@ class Command(BaseCommand):
                         ### Component ###
                         try:
                             comp_file = PisiComponent(os.path.join(root, '../component.xml'))
-                            component, created = Component.objects.get_or_create(component=comp_file.name)
+                            component, created = Component.objects.get_or_create(component=comp_file.name, repo=repo)
                         except:
                             print "Could not find component.xml, trying to retrieve component from directories"
                             dir_comp = root[:root.rfind('/')].replace(os.path.join(home, gitdir, repo_name) + '/','').replace("/",".")
-                            component, created = Component.objects.get_or_create(component=dir_comp)
+                            component, created = Component.objects.get_or_create(component=dir_comp, repo=repo)
 
                         packager, created = Packager.objects.get_or_create(name=spec.source.packager.name, email=spec.source.packager.email)
 
+                        print "\033[01;33m%s\033[0m - %s - %s - (Paket \033[01;33m%d\033[0m)" % (spec.source.name, component.component, repo_name, package_counter)
+
                         ######### Source #########
-                        source_slug = slugify('%s-%s'%(spec.source.name,repo))
-                        source, created = Source.objects.get_or_create(name=spec.source.name, slug=spec.source.name, repo=repo,
+
+                        source_slug = '%s-%s' % (slugify(spec.source.name), repo_os)
+                        source, created = Source.objects.get_or_create(name=spec.source.name, slug=source_slug, repo=repo,
                                                                     defaults={
                                                                         'component':component,
                                                                         'packager':packager
@@ -85,8 +93,8 @@ class Command(BaseCommand):
                         source.archive_url = spec.source.archive[0].uri
 
                         ### İstatistikler ###
-                        source.created_at = validate_date(spec.history[-1].date)
-                        source.updated_at = validate_date(spec.history[0].date)
+                        source.created_at = validate_date(spec.history[-1].date, repo_os)
+                        source.updated_at = validate_date(spec.history[0].date, repo_os)
                         source.build_script_size = getFileSize(os.path.join(root, 'actions.py'))
                         source.spec_script_size = getFileSize(os.path.join(root, file))
                         source.update_count = spec.history.__len__()
@@ -110,7 +118,7 @@ class Command(BaseCommand):
 
                         ######### Package #########
                         for package in spec.packages:
-                            package_slug = slugify(package.name)
+                            package_slug = '%s-%s' % (slugify(package.name), repo_os)
                             p, p_created = Package.objects.get_or_create(slug=package_slug,
                                                                          defaults={
                                                                              'name': package.name,

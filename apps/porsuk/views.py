@@ -1,11 +1,93 @@
+from collections import OrderedDict
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
+from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
 from apps.porsuk.models import Component, Package, Repo, Source
+
+class PackageListView(ListView):
+    title = _("Packages")
+    model = Package
+    paginate_by = 30
+    context_object_name = 'packages'
+    template_name = 'packages.html'
+
+    def get_queryset(self):
+        qs = super(PackageListView, self).get_queryset()
+
+        repo = self.kwargs.get('repo', None)
+        component = self.kwargs.get('component', None)
+        q = self.request.GET.get('q')
+        components = Component.objects.filter(repo__name=repo)
+
+        if component:
+            components = components.filter(component__startswith=component)
+
+        if q:
+            qs = qs.filter(Q(name__icontains=q) |
+                           Q(source__summary__icontains=q) |
+                           Q(source__description__icontains=q))
+
+        qs = qs.filter(source__component__in=components)
+
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super(PackageListView, self).get_context_data(**kwargs)
+
+        repo = self.kwargs.get('repo', None)
+        component = self.kwargs.get('component', None)
+
+        components = Component.objects.filter(repo__name=repo)
+
+        if component:
+            components = components.filter(component__startswith=component)
+
+        component_dict = {}
+        component_parts = []
+
+        if component:
+            component_parts = component.split('.')
+
+        for component_item in components:
+            component_item_parts = component_item.component.split('.')
+
+            if len(component_item_parts) > len(component_parts):
+                component_key = component_item.component.split('.')[len(component_parts)]
+
+                if component_key not in component_dict:
+                    component_dict[component_key] = {
+                        'component': component_key,
+                        'url': '/%s/packages/%s' % (repo, '.'.join(component_parts+[component_key])),
+                        'summary': component_item.summary}
+
+
+
+
+
+        sorted_components = OrderedDict(sorted(component_dict.items(), key=lambda t: t[0]))
+
+        total_packages = Package.objects.filter(source__repo__name=repo).count()
+
+        context.update({
+            'repo': repo,
+            'component': component,
+            'components': sorted_components.values(),
+            'q': self.request.GET.get('q'),
+            'total_packages': total_packages
+        })
+
+        return context
+
+
+
+
+
 
 class ComponentsView(ListView):
     title = _("Site Index")
@@ -17,43 +99,59 @@ class ComponentsView(ListView):
     def get_queryset(self):
         qs = super(ComponentsView, self).get_queryset()
 
-        component_or_package = self.kwargs.get('component_or_package', 'system')
-        components = Component.objects.filter(component__startswith=component_or_package)
+        repo = self.kwargs.get('repo', '1.0')
+        component_name = self.kwargs.get('component_name', None)
+        components = Component.objects.filter(repo__name=repo)
+
+        if component_name:
+            components = components.filter(component__startswith=component_name)
+
 
         qs = qs.filter(source__component__in=components)
+
         return qs
 
     def get_context_data(self, **kwargs):
         context = super(ComponentsView, self).get_context_data(**kwargs)
 
-        repo = get_object_or_404(Repo, name=self.kwargs.get('repo', '1.0'))
-        component_or_package = self.kwargs.get('component_or_package', 'system')
-        component_or_package_spl = component_or_package.split('.')
-        components = Component.objects.filter(component__startswith=component_or_package)
+        repo_name = get_object_or_404(Repo, name=self.kwargs.get('repo', '1.0'))
+
+        component_name = self.kwargs.get('component_name', None)
+
+        components = Component.objects.filter(repo__name=repo_name)
+
+        if component_name:
+            components = components.filter(component__startswith=component_name)
+            component_spl = component_name.split('.')
+        else:
+            component_spl = []
+
         component_list = []
         component_dict = {}
 
-        print component_or_package
-
         for component_item in components:
-            l = len(component_or_package_spl)
+            l = len(component_spl)
             sl = len(component_item.component.split('.'))
 
             if sl > l:
                 component_key = component_item.component.split('.')[l]
 
                 if component_key not in component_dict:
+
+                    summary = None
+
                     component_list.append({
                         'component': component_key.title(),
-                        'url': '/%s/components/%s.%s/' % (repo, '.'.join(component_or_package_spl), component_key),
-                        'summary': '...'
+                        'url': '/%s/components/%s/' % (repo_name, '.'.join(component_spl+[component_key])),
+                        'summary': component_item.summary
                 })
 
                 component_dict[component_key] = {}
 
         context.update({
-            'repo': repo,
+            'repo': repo_name,
             'components': component_list,
+            'component_name': component_name
         })
 
         return context
@@ -64,11 +162,27 @@ class PackageView(DetailView):
     slug_field = 'slug'
     template_name = 'index.html'
 
+    def get_queryset(self):
+        qs = super(PackageView, self).get_queryset()
+
+        repo = self.kwargs.get('repo', None)
+        slug = self.kwargs.get('slug', None)
+
+        self.kwargs['slug'] = '%s-%s'%(slug, repo)
+        # components = Component.objects.filter(repo__name=repo)
+        #
+        # if component_name:
+        #     components = components.filter(component__startswith=component_name)
+        #
+        #
+        # qs = qs.filter(source__component__in=components)
+
+        print self.kwargs
+
+        return qs
+
     def get_context_data(self, **kwargs):
         context = super(PackageView, self).get_context_data(**kwargs)
-
-        print context
-
         return context
 
 

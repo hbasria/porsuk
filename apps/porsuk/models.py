@@ -117,6 +117,8 @@ class Component(models.Model):
     summary = models.CharField(_('Summary'), max_length=600, blank=True, null=True)
     description = models.CharField(_('Description'), max_length=1500, blank=True, null=True)
 
+    repo = models.ForeignKey(Repo, verbose_name=_('Repository'))
+
     def __unicode__(self):
         return self.component
 
@@ -294,7 +296,11 @@ class Package(models.Model):
     
     ### Package Files from files.xml ###
     intrafiles = models.ManyToManyField(IntraFiles, verbose_name=_('IntraFiles'), null=True)
-    
+
+    class Meta:
+        verbose_name = _("Package")
+        verbose_name_plural = _("Packages")
+
     def __unicode__(self):
         return self.name
 
@@ -304,11 +310,9 @@ class Package(models.Model):
     def get_spec_url(self): # FIXME: 
         return "%s%s/%s" % (self.repo.url, self.component.replace(".", "/"), self.name)
 
-    class Admin:
-        list_display = ('name', 'source')
-        search_fields = ['name', 'runtime_dep']
-        ordering=["name"]
 
-    class Meta:
-        verbose_name = _("Package")
-        verbose_name_plural = _("Packages")
+
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('package', (), {'repo': self.source.repo.name, 'slug': self.name})
