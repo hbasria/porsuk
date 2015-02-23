@@ -1,7 +1,7 @@
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from apps.porsuk.models import Package, Component
-from django.core.paginator import Paginator
+
 
 class IndexView(TemplateView):
     title = _("Site Index")
@@ -12,11 +12,13 @@ class IndexView(TemplateView):
 
         context = super(IndexView, self).get_context_data(**kwargs)
 
-        repo = 'pisilinux-1.0'
+        repo = 'pisilinux'
         component_dict = {}
-        package_count = Package.objects.count()
+        total_packages = Package.objects.filter(source__repo__name=repo).count()
 
-        for component_item in Component.objects.all():
+        components = Component.objects.filter(repo__name=repo)
+
+        for component_item in components:
             component_key = component_item.component.split('.')[0]
 
             if component_key not in component_dict:
@@ -25,16 +27,17 @@ class IndexView(TemplateView):
                     'url': '/%s/packages/%s' % (repo, component_key),
                     'summary': ''}
 
-        recently_updated_packages = Package.objects.all().order_by('-source__updated_at')[:12]
-
-
         sorted_component_dict = OrderedDict(sorted(component_dict.items(), key=lambda t: t[0]))
+
+        recently_updated_packages = Package.objects.filter(source__repo__name=repo).order_by('-source__updated_at')[:12]
+        forgotten_packages = Package.objects.filter(source__repo__name=repo).order_by('source__updated_at')[:12]
 
         context['repo'] = repo
         context['components'] = sorted_component_dict.values()
         context['component_name'] = ''
-        context['package_count'] = package_count
+        context['total_packages'] = total_packages
         context['recently_updated_packages'] = recently_updated_packages
+        context['forgotten_packages'] = forgotten_packages
 
         # print context
         return context

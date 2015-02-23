@@ -1,13 +1,14 @@
 from collections import OrderedDict
+from django.contrib.admin.views.main import ChangeList
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
-from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
-from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
 from apps.porsuk.models import Component, Package, Repo, Source
+
+ChangeList
 
 class PackageListView(ListView):
     title = _("Packages")
@@ -32,13 +33,17 @@ class PackageListView(ListView):
                            Q(source__summary__icontains=q) |
                            Q(source__description__icontains=q))
 
-        qs = qs.filter(source__component__in=components)
+        ordering = self.request.GET.get('o', '-source__updated_at')
+        if ordering:
+            qs = qs.order_by(ordering)
 
+        qs = qs.filter(source__component__in=components)
 
         return qs
 
     def get_context_data(self, **kwargs):
         context = super(PackageListView, self).get_context_data(**kwargs)
+        adjacent_pages = 3
 
         repo = self.kwargs.get('repo', None)
         component = self.kwargs.get('component', None)
@@ -66,20 +71,22 @@ class PackageListView(ListView):
                         'url': '/%s/packages/%s' % (repo, '.'.join(component_parts+[component_key])),
                         'summary': component_item.summary}
 
-
-
-
-
         sorted_components = OrderedDict(sorted(component_dict.items(), key=lambda t: t[0]))
 
         total_packages = Package.objects.filter(source__repo__name=repo).count()
+
+        page_numbers = [n for n in \
+                    range(context['page_obj'].number - adjacent_pages, context['page_obj'].number + adjacent_pages + 1) \
+                    if n > 0 and n <= context['paginator'].num_pages]
 
         context.update({
             'repo': repo,
             'component': component,
             'components': sorted_components.values(),
             'q': self.request.GET.get('q'),
-            'total_packages': total_packages
+            'total_packages': total_packages,
+            'page_numbers': page_numbers,
+            'ordering': self.request.GET.get('o', None)
         })
 
         return context
@@ -160,7 +167,7 @@ class ComponentsView(ListView):
 class PackageView(DetailView):
     model = Package
     slug_field = 'slug'
-    template_name = 'index.html'
+    template_name = 'packages.html'
 
     def get_queryset(self):
         qs = super(PackageView, self).get_queryset()

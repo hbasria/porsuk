@@ -154,14 +154,7 @@
                 </p>
 
 
-                <div class="hiring-container" data-template="sidebar">
-                    <div class="ad">
-                        <p>
-                            <a href="http://help.com/#were-hiring">Help.com</a> is hiring.
-                            <a class="quiet" href="/whoshiring">View more…</a>
-                        </p>
-                    </div>
-                </div>
+
             </div>
         </div>
     {% else %}
@@ -175,41 +168,8 @@
                         </hgroup>
                         <p>{{ package.source.description }}</p>
                     </div>
-                </div>
 
-                <div class="sidebar">
-                    <div class="autoselect-wrapper npm-install icon-download">
-                        <input type="text" value="pisi it {{ package.name }}" readonly=""/>
-                    </div>
-
-	                <h3>Package Info</h3>
-	                <ul class="box">
-                        <li>Component: <a href="../{{ package.source.component }}">{{ package.source.component }}</a></li>
-                        <li>Source: <a href="../source/{{ package.source.name }}">{{ package.source.name }}</a></li>
-                        <li>Distro:
-                            <a href="/pisilinux-1.0/packages/{{ package.name }}">pisilinux 1.0</a>,
-                            <a href="/evolveos-1.0/packages/{{ package.name }}">evolve-os 1.0</a>
-                        </li>
-                        <li>
-                          <strong>{{ package.source.version }}</strong>
-                            published {{ package.source.updated_at|naturaltime }}
-                            by <a href="#">{{ package.source.packager.name }}</a>
-                        </li>
-                        <li><a href="{{ package.source.homepage }}">{{ package.source.homepage }}</a></li>
-                    </ul>
-
-                    <h3>Stats</h3>
-                    <ul class="box">
-                        <li>Build Script Size <strong class="pretty-number">{{ package.source.build_script_size }}</strong></li>
-                        <li>Spec Script Size <strong class="pretty-number">{{ package.source.spec_script_size }}</strong></li>
-                        <li>Update Count <strong class="pretty-number">{{ package.source.update_count }}</strong></li>
-                        <li>Patch Count <strong class="pretty-number">{{ package.source.patch_count }}</strong></li>
-                    </ul>
-
-                    <h3>Keywords</h3>
-                    <p class="list-of-links"></p>
-
-                    <h3>Dependencies</h3>
+<h3>Dependencies</h3>
                     <p class="list-of-links">
                         {% for dep in runtime_deps %}
                             <a href="../{{ dep.name }}">
@@ -247,15 +207,36 @@
                         {% endfor %}
                     </p>
 
+                </div>
 
-                    <div class="hiring-container" data-template="sidebar">
-                        <div class="ad">
-                            <p>
-                                <a href="http://help.com/#were-hiring">Help.com</a> is hiring.
-                                <a class="quiet" href="/whoshiring">View more…</a>
-                            </p>
-                        </div>
+                <div class="sidebar">
+                    <div class="autoselect-wrapper npm-install icon-download">
+                        <input type="text" value="pisi it {{ package.name }}" readonly=""/>
                     </div>
+
+	                <h3>Package Info</h3>
+	                <ul class="box">
+                        <li>Component: <a href="../../packages/{{ package.source.component }}">{{ package.source.component }}</a></li>
+                        <li>Source: <a href="../../source/{{ package.source.name }}">{{ package.source.name }}</a></li>
+                        <li>
+                          <strong>{{ package.source.version }}</strong>
+                            published {{ package.source.updated_at|naturaltime }}
+                            by <a href="#">{{ package.source.packager.name }}</a>
+                        </li>
+                        <li><a href="{{ package.source.homepage }}">{{ package.source.homepage }}</a></li>
+                    </ul>
+
+                    <h3>Stats</h3>
+                    <ul class="box">
+                        <li>Build Script Size <strong class="pretty-number">{{ package.source.build_script_size }}</strong></li>
+                        <li>Spec Script Size <strong class="pretty-number">{{ package.source.spec_script_size }}</strong></li>
+                        <li>Update Count <strong class="pretty-number">{{ package.source.update_count }}</strong></li>
+                        <li>Patch Count <strong class="pretty-number">{{ package.source.patch_count }}</strong></li>
+                    </ul>
+
+                    <h3>Keywords</h3>
+                    <p class="list-of-links"></p>
+
                 </div>
             </div>
 
@@ -310,20 +291,32 @@
                 {% if is_paginated %}
 
                     <div class="pagination">
+
+
+
+
                         {% if page_obj.has_previous %}
-                            <a class="previous" href="?page={{ page_obj.previous_page_number }}">Prev</a>
+                            <a class="previous" href="?page={{ page_obj.previous_page_number }}{% if ordering %}&o={{ ordering }}{% endif %}">Prev</a>
                         {% endif %}
 
-                        {% for page_number in paginator.page_range %}
-                            {% if page_number = page_obj.number %}
-                                <a class="active" href="">{{ page_number }}</a>
-                            {% else %}
-                                <a href="?page={{ page_number }}">{{ page_number }}</a>
-                            {% endif %}
-                        {% endfor %}
+{#                        {% for page_number in paginator.page_range %}#}
+{#                            {% if page_number = page_obj.number %}#}
+{#                                <a class="active" href="">{{ page_number }}</a>#}
+{#                            {% else %}#}
+{#                                <a href="?page={{ page_number }}">{{ page_number }}</a>#}
+{#                            {% endif %}#}
+{#                        {% endfor %}#}
+
+                        {% for linkpage in page_numbers %}
+                              {% ifequal linkpage page_obj.number %}
+                                 <span class="current">{{ page_obj.number }}</span>
+                              {% else %}
+                                 <span class="page"><a href="?page={{ linkpage }}{% if ordering %}&o={{ ordering }}{% endif %}">{{ linkpage }}</a></span>
+                              {% endifequal %}
+                           {% endfor %}
 
                         {% if page_obj.has_next %}
-                            <a class="next" href="?page={{ page_obj.next_page_number }}">Next</a>
+                            <a class="next" href="?page={{ page_obj.next_page_number }}{% if ordering %}&o={{ ordering }}{% endif %}">Next</a>
                         {% endif %}
                     </div>
 

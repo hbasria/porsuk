@@ -72,10 +72,31 @@
     {% endif %}
 
     {% if recently_updated_packages %}
-    <h2 class="centered ruled"> recently updated packages </h2>
+    <h2 class="centered ruled"> <a href="/{{ repo }}/packages/?o=-source__updated_at">recently updated packages</a> </h2>
 
     <ul class="columnar">
         {% for package in recently_updated_packages %}
+        <li>
+            <div class="package-widget ">
+                <div class="package-details">
+                    <h3><a class="name" href="{{ package.get_absolute_url }}">{{ package.name }}</a></h3>
+                    <p class="description">{{ package.source.summary }}</p>
+                    <p class="author quiet">
+                        <a class="version" href="/{{ repo }}/packages/{{ package.name }}">{{ package.source.version }}</a>
+                        published {{ package.source.updated_at|naturaltime }} by <a href="#">{{ package.source.packager.name }}</a>
+                    </p>
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+   </ul>
+    {% endif %}
+
+    {% if forgotten_packages %}
+    <h2 class="centered ruled"> <a href="/{{ repo }}/packages/?o=source__updated_at">forgotten packages</a> </h2>
+
+    <ul class="columnar">
+        {% for package in forgotten_packages %}
         <li>
             <div class="package-widget ">
                 <div class="package-details">
