@@ -8,7 +8,6 @@ from django.views.generic.list import ListView
 
 from apps.porsuk.models import Component, Package, Repo, Source
 
-ChangeList
 
 class PackageListView(ListView):
     title = _("Packages")
@@ -201,6 +200,8 @@ class PackageView(DetailView):
 def index(request, repo='1.1', component_or_package=None):
     repo = Repo.objects.filter(name=repo)
     repo = None if not repo else repo[0]
+
+    print('hba')
 
     components = None
     packages = None

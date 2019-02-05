@@ -26,8 +26,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         repositories = (
-            ('pisilinux', '1.0', 'http://packages.pisilinux.org/repositories/1.0/stable/x86_64/pisi-index.xml.xz'),
-            ('evolveos', '1.0', 'https://github.com/evolve-os/repository/raw/master/eopkg-index.xml.xz'),
+            # ('core', '2.0', 'https://ciftlik.pisilinux.org/2.0/pisi-index.xml.xz'),
+            # ('main', '2.0', 'https://ciftlik.pisilinux.org/2.0/pisi-index.xml.xz'),
+            ('contrib', '2.0', 'https://ciftlik.pisilinux.org/2.0/pisi-index.xml.xz'),
+
         )
 
         home = os.environ.get('HOME')
@@ -38,8 +40,8 @@ class Command(BaseCommand):
         package_counter = 1
 
         for repo_os, repo_name, repo_url in repositories:
-            repo_path = os.path.join(home, gitdir, repo_os, repo_name)
-            repo, created = Repo.objects.get_or_create(name='-'.join([repo_os, repo_name]), url=repo_url)
+            repo_path = os.path.join(home, gitdir, repo_os)
+            repo, created = Repo.objects.get_or_create(name=repo_os, url=repo_url)
 
             for root, dirs, files in os.walk(repo_path):
                 for file in files:

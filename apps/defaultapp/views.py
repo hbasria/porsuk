@@ -12,9 +12,9 @@ class IndexView(TemplateView):
 
         context = super(IndexView, self).get_context_data(**kwargs)
 
-        repo = 'pisilinux'
+        repo = 'core'
         component_dict = {}
-        total_packages = Package.objects.filter(source__repo__name=repo).count()
+        total_packages = Package.objects.all().count()
 
         components = Component.objects.filter(repo__name=repo)
 
