@@ -1,10 +1,19 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
 
 import requests
 from peewee import *
+import json
 
-db = SqliteDatabase('problems.db')
+db = SqliteDatabase('issues.db')
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
+
+USERNAME = '-------'
+PASSWORD = '--------'
+
+REPO_OWNER = '---------'
+REPO_NAME = '----------'
 
 
 class Problem(Model):
@@ -97,11 +106,34 @@ def sync_issues():
                 'comment': problem.get('comment'),
             })
 
+            if created:
+                make_github_issue(obj.comment, obj.problem, ['repology'])
+
             print(created, obj.comment)
 
 
+def make_github_issue(title, body=None, labels=None):
+    '''Create an issue on github.com using the given parameters.'''
+    # Our url to create issues via POST
+    url = 'https://api.github.com/repos/%s/%s/issues' % (REPO_OWNER, REPO_NAME)
+    # Create an authenticated session to create the issue
+    session = requests.Session()
+    session.auth = (USERNAME, PASSWORD)
+    # Create our issue
+    issue = {'title': title,
+             'body': body,
+             'labels': labels}
+    # Add the issue to our repository
+    r = session.post(url, json.dumps(issue))
+    if r.status_code == 201:
+        print ('Successfully created Issue ')
+    else:
+        print ('Could not create Issue {0:s}'.format(title))
+        print ('Response:', r.content)
+
+
 if __name__ == '__main__':
-    db_path = os.path.join(APP_DIR, 'problems.db')
+    db_path = os.path.join(APP_DIR, 'issues.db')
 
     if not os.path.exists(db_path):
         db.create_tables([Problem, ])

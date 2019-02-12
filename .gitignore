@@ -3,4 +3,5 @@
 .pydevproject
 .idea
 db.sqlite3
+*.db
 venv/
